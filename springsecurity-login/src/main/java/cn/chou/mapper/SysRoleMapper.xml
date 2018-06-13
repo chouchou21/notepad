@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.chou.mapper.SysRoleMapper">
+	<resultMap id="BaseResultMap" type="cn.chou.bean.SysRole">
+		<id column="role_id" property="roleId" />
+		<result column="role_code" property="roleCode" />
+		<result column="role_name" property="roleName" />
+		<result column="role_status" property="roleStatus" />
+	</resultMap>
+    <select id="getRolesByUserId" resultMap="BaseResultMap">
+        SELECT r.* FROM sys_user_role_rel ur, sys_role r where ur.role_id=r.role_id AND ur.user_id=#{userId}
+    </select>
+</mapper>

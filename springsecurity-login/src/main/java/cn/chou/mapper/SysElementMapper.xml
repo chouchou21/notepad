@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://www.mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.chou.mapper.SysElementMapper">
+	<resultMap id="BaseResultMap" type="cn.chou.bean.SysElement">
+		<id column="element_id" property="elementId" />
+		<result column="element_code" property="elementCode" />
+		<result column="element_label" property="elementLabel" />
+		<result column="element_uri" property="elementUri" />
+		<result column="element_icon" property="elementIcon" />
+		<result column="parentid" property="parentid" />
+		<result column="seqno" property="seqno" />
+		<result column="element_type" property="elementType" />
+		<result column="enabled" property="enabled" />
+	</resultMap>
+    <resultMap id="ResultMap_ExtendChildren" type="cn.chou.bean.SysElement" extends="BaseResultMap">
+        <collection property="children" column="{element_id=element_id}" select="getChildren" />
+    </resultMap>
+    <resultMap id="ResultMap_ExtendUserChildren" type="cn.chou.bean.SysElement" extends="BaseResultMap">
+        <collection property="children" column="{element_id=element_id,user=_id}" select="getUserChildren" />
+    </resultMap>
+    
+    <select id="loadMenu" resultMap="ResultMap_ExtendChildren" useCache="false">
+        SELECT * FROM sys_element WHERE element_type=0 AND parentid=0
+    </select>
+    <select id="getChildren" resultMap="ResultMap_ExtendChildren">
+        SELECT * FROM sys_element WHERE element_type=0 AND parentid=#{element_id}
+    </select>
+    
+    <select id="loadUserMenu" resultMap="ResultMap_ExtendUserChildren">
+        SELECT *,#{userId} as _id FROM sys_element WHERE element_type=0 AND parentid=0 AND element_id in 
+        (SELECT r_e.element_id FROM sys_user_role_rel u_r, sys_role_element_rel r_e where
+        u_r.role_id=r_e.role_id AND u_r.user_id=#{userId})
+    </select>
+    <select id="getUserChildren" parameterType="java.util.Map" resultMap="ResultMap_ExtendUserChildren">
+        SELECT *,#{user} as _id FROM sys_element WHERE element_type=0 AND parentid=#{element_id} AND element_id in 
+        (SELECT r_e.element_id FROM sys_user_role_rel u_r, sys_role_element_rel r_e where
+        u_r.role_id=r_e.role_id AND u_r.user_id=#{user})
+    </select>
+    
+    <!-- 以下查询的数据没有父子关系，为不含children的查询 -->
+    <select id="getMenusByUserId" resultMap="BaseResultMap">
+        SELECT e.* FROM sys_user_role_rel u_r, sys_role_element_rel r_e, sys_element e where 
+        e.element_type=0 AND r_e.element_id=e.element_id AND u_r.role_id=r_e.role_id AND u_r.user_id=#{userId}
+    </select>
+    <select id="getMenusByRoles" resultMap="BaseResultMap">
+        SELECT e.* FROM sys_role_element_rel r_e, sys_element e where
+        e.element_type=0 AND r_e.element_id=e.element_id AND r_e.role_id in
+        <foreach collection="list" item="role" index="index" 
+            open="(" close=")" separator=",">
+            #{role.roleId}
+        </foreach>
+    </select>
+    <select id="getMenusByRoleId" resultMap="BaseResultMap">
+        SELECT e.* FROM sys_role_element_rel r_e, sys_element e where
+        e.element_type=0 AND r_e.element_id=e.element_id AND r_e.role_id=#{roleId}
+    </select>
+</mapper>
